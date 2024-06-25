@@ -1,6 +1,7 @@
 const web3 = require('@solana/web3.js');
 const bs58 = require('bs58');
 const dotenv = require('dotenv');
+const cron = require('node-cron');
 
 // Load environment variables from .env file
 dotenv.config();
@@ -31,11 +32,8 @@ const maxTransfers = 110;
 
 const transferToRecipient = async () => {
   if (transferCount >= maxTransfers) {
-    console.log('Completed 110 transfers. Waiting for 24 hours before starting again...');
-    setTimeout(() => {
-      transferCount = 0;
-      transferToRecipient(); // Restart the transfer process
-    }, 24 * 60 * 60 * 1000); // Wait for 25 hours
+    console.log('Completed 110 transfers. Waiting for the next schedule to start again...');
+    transferCount = 0; // Reset the transfer count for the next run
     return;
   }
 
@@ -77,4 +75,13 @@ const transferToRecipient = async () => {
   }
 };
 
+// Schedule the task to run every 24 hours
+cron.schedule('0 0 * * *', () => {
+  console.log('Starting scheduled transfer process...');
+  transferToRecipient();
+}, {
+  timezone: "Etc/UTC"
+});
+
+// Start the initial transfer process immediately
 transferToRecipient();
