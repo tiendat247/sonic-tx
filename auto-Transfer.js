@@ -26,7 +26,19 @@ const getRandomDelay = () => {
   return Math.floor(Math.random() * 6 + 15) * 1000;
 };
 
+let transferCount = 0;
+const maxTransfers = 110;
+
 const transferToRecipient = async () => {
+  if (transferCount >= maxTransfers) {
+    console.log('Completed 110 transfers. Waiting for 24 hours before starting again...');
+    setTimeout(() => {
+      transferCount = 0;
+      transferToRecipient(); // Restart the transfer process
+    }, 24 * 60 * 60 * 1000); // Wait for 25 hours
+    return;
+  }
+
   try {
     const balanceMainWallet = await connection.getBalance(fromWallet.publicKey);
     const balanceLeft = balanceMainWallet - lamportsToSend;
@@ -51,10 +63,15 @@ const transferToRecipient = async () => {
       console.log('Wallet B balance:', balanceOfWalletB);
     }
 
-    const delay = getRandomDelay();
-    console.log(`Next transfer in ${delay / 1000} seconds`);
-    await new Promise((resolve) => setTimeout(resolve, delay));
-    transferToRecipient(); // Recursive call for continuous transfers
+    transferCount++;
+    console.log(`Transfers completed: ${transferCount}/${maxTransfers}`);
+
+    if (transferCount < maxTransfers) {
+      const delay = getRandomDelay();
+      console.log(`Next transfer in ${delay / 1000} seconds`);
+      await new Promise((resolve) => setTimeout(resolve, delay));
+      transferToRecipient(); // Recursive call for continuous transfers
+    }
   } catch (error) {
     console.error('Error during transfer:', error.message);
   }
