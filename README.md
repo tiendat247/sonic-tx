@@ -62,7 +62,7 @@ RECIPIENT_ADDRESS = your recipient address
 npm install
 
 # Run
-node auto-Transfer.js
+node autoxfr.js
 ```
 
 Close it after 100 txns, and come back tomorrow :D
