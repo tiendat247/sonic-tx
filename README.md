@@ -36,7 +36,7 @@ npm install --save @solana/web3.js
 
 ## 2- Clone Repo:
 ```console
-git clone https://github.com/0xmoei/sonic-tx/
+git clone https://github.com/tiendat247/sonic-tx.git
 ```
 
 ## 3- Edit .env:
