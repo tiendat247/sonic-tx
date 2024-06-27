@@ -1,7 +1,6 @@
 const web3 = require('@solana/web3.js');
 const bs58 = require('bs58');
 const dotenv = require('dotenv');
-const cron = require('node-cron');
 
 // Load environment variables from .env file
 dotenv.config();
@@ -32,8 +31,7 @@ const maxTransfers = 110;
 
 const transferToRecipient = async () => {
   if (transferCount >= maxTransfers) {
-    console.log('Completed 110 transfers. Waiting for the next schedule to start again...');
-    transferCount = 0; // Reset the transfer count for the next run
+    console.log('Completed 110 transfers.');
     return;
   }
 
@@ -68,20 +66,43 @@ const transferToRecipient = async () => {
       const delay = getRandomDelay();
       console.log(`Next transfer in ${delay / 1000} seconds`);
       await new Promise((resolve) => setTimeout(resolve, delay));
-      transferToRecipient(); // Recursive call for continuous transfers
+      await transferToRecipient(); // Recursive call for continuous transfers
     }
   } catch (error) {
     console.error('Error during transfer:', error.message);
   }
 };
 
-// Schedule the task to run every 24 hours
-cron.schedule('0 0 * * *', () => {
-  console.log('Starting scheduled transfer process...');
-  transferToRecipient();
-}, {
-  timezone: "Etc/UTC"
-});
+const showWaitingDots = async (timeToWait) => {
+  const interval = 10000; // 10 seconds in milliseconds
+  const steps = Math.ceil(timeToWait / interval);
 
-// Start the initial transfer process immediately
-transferToRecipient();
+  for (let i = 0; i < steps; i++) {
+    process.stdout.write('.');
+    await new Promise((resolve) => setTimeout(resolve, interval));
+  }
+  console.log(''); // New line after the waiting period
+};
+
+const calculateTimeToNextRun = () => {
+  const now = new Date();
+  const nextRun = new Date(now);
+  nextRun.setUTCHours(3, 0, 0, 0); // Set to 03:00 UTC
+  if (now >= nextRun) {
+    nextRun.setUTCDate(nextRun.getUTCDate() + 1); // Set to next day if already passed
+  }
+  return nextRun.getTime() - now.getTime();
+};
+
+const main = async () => {
+  while (true) {
+    const timeToWait = calculateTimeToNextRun();
+    console.log(`Waiting for ${timeToWait / 1000 / 60 / 60} hours until next run at 03:00 UTC...`);
+    await showWaitingDots(timeToWait);
+
+    transferCount = 0;
+    await transferToRecipient();
+  }
+};
+
+main();
